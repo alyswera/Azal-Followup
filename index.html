@@ -1,455 +1,231 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة المتابعة الفورية للعمليات</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2310b981'/><path d='M30 35c0-2.8 2.2-5 5-5h8c1.7 0 3.2 1.1 3.8 2.7l3 8c.7 1.8-.2 3.8-1.9 4.6l-3.3 1.6c3.2 5.5 7.7 10 13.2 13.2l1.6-3.3c.8-1.7 2.8-2.6 4.6-1.9l8 3c1.6.6 2.7 2.1 2.7 3.8v8c0 2.8-2.2 5-5 5-22.1 0-40-17.9-40-40z' fill='%23ffffff'/></svg>">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
-        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; color: #0f172a; }
-        .alert-row { background-color: #fef2f2 !important; border-right: 4px solid #ef4444; }
-        th { border: 1px solid #cbd5e1 !important; text-align: center !important; }
-        td { border: 1px solid #e2e8f0 !important; }
-        .dynamic-textarea { resize: none; overflow-y: hidden; min-height: 36px; line-height: 1.4; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة المتابعة الفورية للعمليات</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Cairo', sans-serif; background: #f8fafc; }
+    .card { background:#fff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 8px 24px rgba(15,23,42,.06); }
+  </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-0 m-0">
+<body class="min-h-screen p-4 md:p-6">
+  <div id="login-card" class="max-w-md mx-auto card p-6 mt-16">
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-extrabold text-slate-800 mb-2">لوحة المتابعة الفورية للعمليات</h1>
+      <p class="text-sm text-slate-500">أدخل كود الموظف لعرض الليدز الخاصة بك</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-2">كود الموظف</label>
+        <input id="login-emp-input" type="text" class="w-full border-2 border-slate-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:border-blue-600" placeholder="مثال: CC01">
+      </div>
+      <button onclick="login()" class="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl font-bold transition">دخول</button>
+    </div>
+  </div>
 
-    <div id="login-card" class="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-200 text-center mx-4">
-        <div class="w-20 h-20 bg-emerald-600 text-white rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-emerald-100">
-            <i class="fa-solid fa-headset"></i>
-        </div>
-        <h2 class="text-2xl font-black text-slate-900">منظومة المتابعة الرقمية</h2>
-        <p class="text-slate-500 text-sm mt-1 font-bold">يرجى كتابة كود الموظف الخاص بك بشكل صحيح (مثال: CC01)</p>
-        
-        <div class="mt-6 space-y-4">
-            <div class="text-right">
-                <label class="block text-sm font-black text-slate-700 mb-1">كود الموظف المسؤول</label>
-                <input type="text" id="login-emp-input" placeholder="اكتب كودك هنا.. مثل CC01" class="w-full border-2 border-slate-200 rounded-xl p-3.5 text-center font-black text-lg bg-slate-50 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all uppercase">
-            </div>
-            <button onclick="login()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2">
-                دخول واستعراض الجدول المباشر <i class="fa-solid fa-right-to-bracket"></i>
-            </button>
-        </div>
+  <div id="app-container" class="hidden max-w-7xl mx-auto space-y-6">
+    <div class="card p-4 md:p-5 flex flex-wrap gap-3 justify-between items-center">
+      <div>
+        <h2 class="text-xl font-extrabold text-slate-800">لوحة المتابعة الفورية للعمليات</h2>
+        <p class="text-sm text-slate-500">الموظف الحالي: <span id="user-display-badge" class="font-extrabold text-emerald-700"></span></p>
+      </div>
+      <div class="flex gap-2 items-center">
+        <select id="status-filter" onchange="renderTable()" class="border rounded-xl px-3 py-2 bg-white text-sm font-bold">
+          <option value="ALL">كل الحالات</option>
+          <option value="تأكيد الطلب">تأكيد الطلب</option>
+          <option value="تم التواصل">تم التواصل</option>
+          <option value="جاري المتابعة">جاري المتابعة</option>
+          <option value="مؤجل">مؤجل</option>
+          <option value="مغلق">مغلق</option>
+          <option value="لا يرد">لا يرد</option>
+        </select>
+        <input id="search-box" oninput="renderTable()" type="text" placeholder="بحث باسم العميل أو الهاتف" class="border rounded-xl px-3 py-2 bg-white text-sm min-w-[250px]">
+        <button onclick="logout()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl px-4 py-2 text-sm font-bold">خروج آمن</button>
+      </div>
     </div>
 
-    <div id="app-container" class="w-full min-h-screen flex flex-col hidden">
-        <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-20 flex flex-wrap justify-between items-center gap-4 shadow-sm">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-lg shadow"><i class="fa-solid fa-table-list"></i></div>
-                <div>
-                    <h1 class="font-black text-slate-900 text-lg">لوحة المتابعة الفورية للعمليات</h1>
-                    <p class="text-xs text-slate-500 font-bold">الموظف الحالي: <span id="user-display-badge" class="text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"></span></p>
-                </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center gap-1.5 border border-slate-200 bg-slate-50 p-1.5 rounded-lg text-xs font-bold">
-                    <span class="text-slate-500">من:</span>
-                    <input type="date" id="filter-date-from" onchange="processTableData()" class="bg-white border border-slate-200 rounded p-1 font-bold">
-                    <span class="text-slate-500">إلى:</span>
-                    <input type="date" id="filter-date-to" onchange="processTableData()" class="bg-white border border-slate-200 rounded p-1 font-bold">
-                </div>
+    <div id="saving-indicator" class="hidden text-center text-sm font-bold text-blue-700">جاري الحفظ...</div>
 
-                <div class="relative">
-                    <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" id="search-any" oninput="processTableData()" placeholder="بحث باسم العميل أو الهاتف..." class="border border-slate-300 text-slate-900 font-bold rounded-lg pr-7 pl-2 py-1.5 text-xs bg-slate-50 focus:outline-none focus:border-emerald-500 w-44">
-                </div>
-                
-                <select id="filter-status" onchange="processTableData()" class="border border-slate-300 text-slate-900 font-bold rounded-lg p-1.5 text-xs bg-white focus:outline-none">
-                    <option value="ALL">كل الحالات</option>
-                    <option value="لم يتم الرد">لم يتم الرد</option>
-                    <option value="متابعة">متابعة</option>
-                    <option value="تأكيد الطلب">تأكيد الطلب</option>
-                    <option value="غير جاد">غير جاد</option>
-                </select>
-
-                <select id="filter-alert" onchange="processTableData()" class="border border-slate-300 text-red-600 font-bold rounded-lg p-1.5 text-xs bg-white focus:outline-none">
-                    <option value="ALL">كل المتابعات</option>
-                    <option value="EXPIRED">متابعات متأخرة ⚠️</option>
-                    <option value="TODAY">تستحق اليوم 📅</option>
-                </select>
-
-                <button onclick="logoutWithSave()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">
-                    خروج آمن <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>
-                </button>
-            </div>
-        </header>
-
-        <main class="p-4 flex-1 flex flex-col w-full overflow-hidden">
-            <div id="table-loader" class="flex-1 flex flex-col items-center justify-center p-12">
-                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mb-3"></div>
-                <p class="text-sm font-bold text-slate-500">جاري سحب ومزامنة بيانات صفحة بيانات العملاء...</p>
-            </div>
-
-            <div id="table-content-area" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden hidden flex-1 flex flex-col w-full">
-                <div class="overflow-x-auto flex-1 w-full">
-                    <table class="w-full text-right text-xs table-fixed min-w-[1300px]">
-                        <thead>
-                            <tr class="bg-slate-800 text-slate-100 sticky top-0 z-10 font-bold text-center">
-                                <th class="p-3 w-12 bg-slate-900">#</th>
-                                <th class="p-3 w-28">التاريخ</th>
-                                <th class="p-3 w-48">اسم العميل</th>
-                                <th class="p-3 w-36">رقم الهاتف</th>
-                                <th class="p-3 w-40">نوع المنتج</th>
-                                <th class="p-3 w-28">السعر</th>
-                                <th class="p-3 w-44 bg-slate-900 text-emerald-300">الحالة</th>
-                                <th class="p-3 w-64 bg-slate-900 text-emerald-300">الملاحظات</th>
-                                <th class="p-3 w-40 bg-slate-900 text-emerald-300">تاريخ المتابعة القادم</th>
-                                <th class="p-3 w-24 bg-blue-950 text-white">إجراء</th>
-                            </tr>
-                        </thead>
-                        <tbody id="crm-table-body" class="divide-y divide-slate-200 font-bold text-slate-800"></tbody>
-                    </table>
-                </div>
-                
-                <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex justify-between items-center font-bold flex-wrap gap-2">
-                    <div>إجمالي العمليات المسندة لك: <span id="counter-total" class="text-blue-600 font-black">0</span> عميل</div>
-                    <div id="saving-indicator" class="text-emerald-700 hidden font-black"><i class="fa-solid fa-cloud-arrow-up animate-pulse ml-1 text-blue-500"></i> جاري مزامنة وحفظ التعديلات تلقائياً في الشيت...</div>
-                    <div>متابعات متأخرة متراكمة: <span id="counter-alerts" class="text-red-500 font-black">0</span> حالة</div>
-                </div>
-            </div>
-        </main>
+    <div class="card p-4">
+      <div class="overflow-x-auto">
+        <table class="w-full text-right border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-950 text-white">
+              <th class="p-3">#</th>
+              <th class="p-3">التاريخ</th>
+              <th class="p-3">اسم العميل</th>
+              <th class="p-3">رقم الهاتف</th>
+              <th class="p-3">المنتج</th>
+              <th class="p-3">السعر</th>
+              <th class="p-3">الحالة</th>
+              <th class="p-3">الملاحظات</th>
+              <th class="p-3">تاريخ المتابعة القادم</th>
+              <th class="p-3">إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpCXaJZDPM_QdmKKj0lNXETIcYoQssnqS7B0tQcHooQ9iWDHVijqqnjl6XPZ6EJld4ig/exec";
-        
-        let loggedEmpCode = "";
-        let originalRecords = [];
-        let modifiedRows = new Set();
-        let autoSaveTimer = null;
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpCXaJZDPM_QdmKKj0lNXETIcYoQssnqS7B0tQcHooQ9iWDHVijqqnjl6XPZ6EJld4ig/exec';
+    let loggedEmpCode = '';
+    let originalRecords = [];
+    let modifiedRows = new Set();
+    let autoSaveTimer = null;
 
-        function normalizeEmployeeCode(value) {
-            return String(value || '').replace(/\s+/g, '').trim().toUpperCase();
+    function normalizeEmployeeCode(value) { return String(value || '').replace(/\s+/g, '').trim().toUpperCase(); }
+    function normalizeText(value) { return String(value || '').trim(); }
+    function normalizeNumber(value) { if (typeof value === 'number') return value; const cleaned = String(value || '').replace(/[^\d.,-]/g, '').replace(/,/g, ''); const num = parseFloat(cleaned); return isNaN(num) ? 0 : num; }
+    function parseFlexibleDate(value) {
+      if (!value) return null;
+      if (value instanceof Date && !isNaN(value.getTime())) return value;
+      const str = String(value).trim();
+      if (!str) return null;
+      const direct = new Date(str);
+      if (!isNaN(direct.getTime())) return direct;
+      const cleaned = str.replace(/[م]/g, '').replace(/[ص]/g, '').replace(/\u200f/g, '').replace(/\u200e/g, '').trim();
+      const match = cleaned.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return null;
+    }
+    function formatDateDisplay(value) { const d = parseFlexibleDate(value); return d ? d.toLocaleDateString('ar-EG') : '-'; }
+    function dateToInputValue(value) { const d = parseFlexibleDate(value); if (!d) return ''; const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+    function cleanDateToYYYYMMDD(value) { if (!value) return ''; const d = parseFlexibleDate(value); if (!d) return value; const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return `${y}/${m}/${day}`; }
+
+    function login() {
+      const inputVal = document.getElementById('login-emp-input').value;
+      const cleanCode = normalizeEmployeeCode(inputVal);
+      if (!cleanCode) { alert('من فضلك أدخل كود الموظف الخاص بك.'); return; }
+      loggedEmpCode = cleanCode;
+      document.getElementById('login-card').classList.add('hidden');
+      document.getElementById('app-container').classList.remove('hidden');
+      document.getElementById('user-display-badge').innerText = loggedEmpCode;
+      loadDataFromSheet();
+      autoSaveTimer = setInterval(() => { if (modifiedRows.size > 0) saveAllModifiedRowsSilently(); }, 15000);
+    }
+
+    function logout() {
+      if (autoSaveTimer) clearInterval(autoSaveTimer);
+      loggedEmpCode = '';
+      originalRecords = [];
+      modifiedRows.clear();
+      document.getElementById('app-container').classList.add('hidden');
+      document.getElementById('login-card').classList.remove('hidden');
+      document.getElementById('login-emp-input').value = '';
+    }
+
+    async function loadDataFromSheet() {
+      try {
+        const response = await fetch(`${SCRIPT_URL}?empCode=${encodeURIComponent(loggedEmpCode)}`);
+        const data = await response.json();
+        originalRecords = (Array.isArray(data) ? data : []).map(item => ({ ...item, employeeCode: normalizeEmployeeCode(item.employeeCode), price: normalizeNumber(item.price) }));
+        renderTable();
+      } catch (e) {
+        console.error(e);
+        alert('فشل تحميل البيانات من الشيت.');
+      }
+    }
+
+    function markRowAsModified(rowIndex) {
+      modifiedRows.add(String(rowIndex));
+      const btn = document.getElementById(`btn-save-${rowIndex}`);
+      if (btn) {
+        btn.classList.remove('bg-emerald-600');
+        btn.classList.add('bg-amber-500');
+      }
+    }
+
+    function getFilteredRecords() {
+      const statusFilter = document.getElementById('status-filter').value;
+      const search = normalizeText(document.getElementById('search-box').value).toLowerCase();
+      return originalRecords.filter(item => {
+        if (statusFilter !== 'ALL' && normalizeText(item.status) !== statusFilter) return false;
+        if (search) {
+          const hay = [item.customerName, item.phone, item.productType].join(' ').toLowerCase();
+          if (!hay.includes(search)) return false;
         }
+        return true;
+      });
+    }
 
-        function parseFlexibleDate(value) {
-            if (!value) return null;
-            if (value instanceof Date && !isNaN(value.getTime())) return value;
+    function renderTable() {
+      const rows = getFilteredRecords();
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">لا توجد بيانات مطابقة</td></tr>`;
+        return;
+      }
+      rows.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-3">${idx + 1}</td>
+          <td class="p-3">${formatDateDisplay(item.date)}</td>
+          <td class="p-3 font-bold text-slate-800">${item.customerName || '-'}</td>
+          <td class="p-3">${item.phone || '-'}</td>
+          <td class="p-3"><span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-lg text-xs font-bold">${item.productType || '-'}</span></td>
+          <td class="p-3 text-emerald-700 font-bold">${normalizeNumber(item.price).toLocaleString('ar-EG')} ج.م</td>
+          <td class="p-3"><select id="status-${item.rowIndex}" onchange="markRowAsModified('${item.rowIndex}')" class="w-full border rounded-lg p-2 bg-white text-sm font-bold"><option value="">--- اختر ---</option><option value="تأكيد الطلب" ${item.status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option><option value="تم التواصل" ${item.status === 'تم التواصل' ? 'selected' : ''}>تم التواصل</option><option value="جاري المتابعة" ${item.status === 'جاري المتابعة' ? 'selected' : ''}>جاري المتابعة</option><option value="مؤجل" ${item.status === 'مؤجل' ? 'selected' : ''}>مؤجل</option><option value="مغلق" ${item.status === 'مغلق' ? 'selected' : ''}>مغلق</option><option value="لا يرد" ${item.status === 'لا يرد' ? 'selected' : ''}>لا يرد</option></select></td>
+          <td class="p-3"><input id="notes-${item.rowIndex}" value="${(item.notes || '').replace(/"/g, '&quot;')}" oninput="markRowAsModified('${item.rowIndex}')" class="w-full border rounded-lg p-2 bg-white text-sm" placeholder="اكتب ملاحظات الحالة..."></td>
+          <td class="p-3"><input id="followUp-${item.rowIndex}" type="date" value="${dateToInputValue(item.followUpDate)}" onchange="markRowAsModified('${item.rowIndex}')" class="w-full border rounded-lg p-2 bg-white text-sm"></td>
+          <td class="p-3"><button id="btn-save-${item.rowIndex}" onclick="saveSingleRow('${item.rowIndex}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold">حفظ</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
 
-            const str = String(value).trim();
-            if (!str) return null;
+    async function saveSingleRow(rowIndex) {
+      const indicator = document.getElementById('saving-indicator');
+      indicator.classList.remove('hidden');
+      const stat = document.getElementById(`status-${rowIndex}`).value;
+      const nts = document.getElementById(`notes-${rowIndex}`).value;
+      const fUp = cleanDateToYYYYMMDD(document.getElementById(`followUp-${rowIndex}`).value);
+      try {
+        const response = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateFollowupRow', rowIndex: rowIndex, status: stat, notes: nts, followUpDate: fUp }) });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || 'Save failed');
+        modifiedRows.delete(String(rowIndex));
+        const row = originalRecords.find(r => String(r.rowIndex) === String(rowIndex));
+        if (row) { row.status = stat; row.notes = nts; row.followUpDate = fUp; }
+        const btn = document.getElementById(`btn-save-${rowIndex}`);
+        if (btn) { btn.classList.remove('bg-amber-500'); btn.classList.add('bg-emerald-600'); }
+      } catch (e) {
+        console.error(e);
+        alert('فشل حفظ التعديلات في الشيت.');
+      }
+      indicator.classList.add('hidden');
+    }
 
-            const direct = new Date(str);
-            if (!isNaN(direct.getTime())) return direct;
-
-            const cleaned = str.replace(/[م]/g, '').replace(/[ص]/g, '').replace(/\u200f/g, '').replace(/\u200e/g, '').trim();
-            const match = cleaned.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-            if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-            return null;
-        }
-
-        function cleanDateToYYYYMMDD(dateInput) {
-            const d = parseFlexibleDate(dateInput);
-            if (!d) return "";
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-        }
-
-        function formatDateDisplay(dateInput) {
-            const d = parseFlexibleDate(dateInput);
-            return d ? d.toLocaleDateString('ar-EG') : (dateInput || '');
-        }
-
-        function login() {
-            const inputVal = document.getElementById('login-emp-input').value;
-            const cleanCode = normalizeEmployeeCode(inputVal);
-
-            if (!cleanCode) {
-                alert("من فضلك أدخل كود الموظف الخاص بك (مثل CC01) للبدء!");
-                return;
-            }
-            
-            loggedEmpCode = cleanCode;
-            document.getElementById('login-card').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('user-display-badge').innerText = loggedEmpCode;
-            
-            loadDataFromSheet();
-            autoSaveTimer = setInterval(() => { 
-                if (modifiedRows.size > 0) saveAllModifiedRowsSilently(); 
-            }, 15000);
-        }
-
-        async function logoutWithSave() {
-            if (modifiedRows.size > 0) {
-                await saveAllModifiedRowsSilently();
-            }
-
-            if (autoSaveTimer) clearInterval(autoSaveTimer);
-
-            modifiedRows.clear();
-            loggedEmpCode = "";
-            originalRecords = [];
-            document.getElementById('login-emp-input').value = "";
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('login-card').classList.remove('hidden');
-        }
-
-        async function loadDataFromSheet() {
-            document.getElementById('table-loader').classList.remove('hidden');
-            document.getElementById('table-content-area').classList.add('hidden');
-
-            try {
-                const fetchUrl = SCRIPT_URL + "?empCode=" + encodeURIComponent(loggedEmpCode);
-                const response = await fetch(fetchUrl);
-                const data = await response.json();
-
-                originalRecords = Array.isArray(data) ? data.map(row => ({
-                    rowIndex: row.rowIndex || "",
-                    date: row.date || "",
-                    customerName: row.customerName || "",
-                    phone: row.phone || "",
-                    productType: row.productType || "",
-                    price: row.price || "",
-                    status: row.status || "",
-                    notes: row.notes || "",
-                    followUpDate: row.followUpDate || "",
-                    employeeCode: normalizeEmployeeCode(row.employeeCode || loggedEmpCode)
-                })) : [];
-
-                const allDates = originalRecords.map(r => parseFlexibleDate(r.date)).filter(Boolean);
-                if (allDates.length) {
-                    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-                    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-                    document.getElementById('filter-date-from').value = cleanDateToYYYYMMDD(minDate);
-                    document.getElementById('filter-date-to').value = cleanDateToYYYYMMDD(maxDate);
-                }
-
-                processTableData();
-            } catch (error) {
-                alert("خطأ أثناء الاتصال بالسيرفر، تأكد من رابط الـ Apps Script الصحيح وأنه منشور كـ Web App.");
-                console.error(error);
-            }
-
-            document.getElementById('table-loader').classList.add('hidden');
-            document.getElementById('table-content-area').classList.remove('hidden');
-        }
-
-        function processTableData() {
-            let records = [...originalRecords];
-            const searchAny = document.getElementById('search-any').value.toLowerCase();
-            const statusFilter = document.getElementById('filter-status').value;
-            const alertFilter = document.getElementById('filter-alert').value;
-            const dateFrom = document.getElementById('filter-date-from').value;
-            const dateTo = document.getElementById('filter-date-to').value;
-            const todayStr = cleanDateToYYYYMMDD(new Date());
-
-            if (dateFrom || dateTo) {
-                records = records.filter(r => {
-                    if (!r.date) return false;
-                    const cleanRowD = cleanDateToYYYYMMDD(r.date);
-                    if (!cleanRowD) return true;
-                    if (dateFrom && cleanRowD < dateFrom) return false;
-                    if (dateTo && cleanRowD > dateTo) return false;
-                    return true;
-                });
-            }
-
-            if (searchAny) {
-                records = records.filter(r =>
-                    String(r.customerName || "").toLowerCase().includes(searchAny) ||
-                    String(r.phone || "").includes(searchAny) ||
-                    String(r.productType || "").toLowerCase().includes(searchAny)
-                );
-            }
-
-            if (statusFilter !== "ALL") {
-                records = records.filter(r => String(r.status || "") === statusFilter);
-            }
-
-            let alertCounter = 0;
-            records = records.filter(r => {
-                let isExpired = false;
-                let isToday = false;
-                const fDate = cleanDateToYYYYMMDD(r.followUpDate);
-
-                if (fDate) {
-                    if (fDate < todayStr && !String(r.status || "").includes('تأكيد') && !String(r.status || "").includes('غير جاد')) {
-                        isExpired = true;
-                        alertCounter++;
-                    } else if (fDate === todayStr) {
-                        isToday = true;
-                    }
-                }
-
-                if (alertFilter === "EXPIRED") return isExpired;
-                if (alertFilter === "TODAY") return isToday;
-                return true;
-            });
-
-            document.getElementById('counter-total').innerText = records.length;
-            document.getElementById('counter-alerts').innerText = alertCounter;
-            renderTableRows(records, todayStr);
-        }
-
-        function renderTableRows(records, todayStr) {
-            const tbody = document.getElementById('crm-table-body');
-            let html = "";
-
-            if (records.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400 font-bold">لا توجد سجلات مطابقة لكودك الحالي في الشيت.</td></tr>`;
-                return;
-            }
-
-            records.forEach((row, index) => {
-                const fDateClean = cleanDateToYYYYMMDD(row.followUpDate);
-                const status = row.status || "";
-                const notes = row.notes || "";
-                const customerName = row.customerName || "-";
-                const phone = row.phone || "-";
-                const productType = row.productType || "-";
-                const price = row.price || "-";
-                const isAlert = (fDateClean && fDateClean < todayStr && !String(status).includes('تأكيد') && !String(status).includes('غير جاد'));
-
-                html += `
-                    <tr class="hover:bg-slate-50 text-center transition-colors ${isAlert ? 'alert-row' : ''}">
-                        <td class="p-2.5 text-slate-400 bg-slate-50/50">${index + 1}</td>
-                        <td class="p-2.5 text-slate-600">${formatDateDisplay(row.date)}</td>
-                        <td class="p-2.5 text-slate-900 text-right font-black text-sm">${customerName}</td>
-                        <td class="p-2.5 text-slate-700 font-bold tracking-wide">${phone}</td>
-                        <td class="p-2.5"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[11px] font-black border border-emerald-200">${productType}</span></td>
-                        <td class="p-2.5 font-black text-emerald-600">${Number(price || 0).toLocaleString('ar-EG')} ج.م</td>
-                        
-                        <td class="p-1.5 bg-slate-50/30">
-                            <select id="status-${row.rowIndex}" onchange="markModified(${row.rowIndex})" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white">
-                                <option value="" ${status === '' ? 'selected' : ''}>-- إختر --</option>
-                                <option value="لم يتم الرد" ${status === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
-                                <option value="متابعة" ${status === 'متابعة' ? 'selected' : ''}>متابعة</option>
-                                <option value="تأكيد الطلب" ${status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option>
-                                <option value="غير جاد" ${status === 'غير جاد' ? 'selected' : ''}>غير جاد</option>
-                            </select>
-                        </td>
-
-                        <td class="p-1.5 bg-slate-50/30">
-                            <textarea id="notes-${row.rowIndex}" oninput="autoExpand(this); markModified(${row.rowIndex})" placeholder="اكتب ملاحظتك الحالية..." class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white text-right dynamic-textarea">${notes}</textarea>
-                        </td>
-
-                        <td class="p-1.5 bg-slate-50/30">
-                            <input type="date" id="followUp-${row.rowIndex}" onchange="markModified(${row.rowIndex})" value="${fDateClean}" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white text-center">
-                        </td>
-
-                        <td class="p-1.5 bg-slate-50">
-                            <button id="btn-save-${row.rowIndex}" onclick="saveSingleRow(${row.rowIndex})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded text-[11px] transition cursor-pointer">
-                                <i class="fa-solid fa-floppy-disk"></i> حفظ
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
-            document.querySelectorAll('.dynamic-textarea').forEach(autoExpand);
-        }
-
-        function markModified(rId) {
-            modifiedRows.add(rId);
-            const btn = document.getElementById(`btn-save-${rId}`);
-            if (btn) {
-                btn.classList.remove('bg-emerald-600');
-                btn.classList.add('bg-amber-500');
-            }
-        }
-
-        function autoExpand(el) {
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
-        }
-
-        async function saveSingleRow(rowIndex) {
-            const indicator = document.getElementById('saving-indicator');
-            if (indicator) indicator.classList.remove('hidden');
-            
-            const stat = document.getElementById(`status-${rowIndex}`).value;
-            const nts = document.getElementById(`notes-${rowIndex}`).value;
-            const fUp = cleanDateToYYYYMMDD(document.getElementById(`followUp-${rowIndex}`).value);
-
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'updateFollowupRow',
-                        rowIndex: rowIndex,
-                        status: stat,
-                        notes: nts,
-                        followUpDate: fUp
-                    })
-                });
-
-                modifiedRows.delete(rowIndex);
-
-                const row = originalRecords.find(r => String(r.rowIndex) === String(rowIndex));
-                if (row) {
-                    row.status = stat;
-                    row.notes = nts;
-                    row.followUpDate = fUp;
-                }
-
-                const btn = document.getElementById(`btn-save-${rowIndex}`);
-                if (btn) {
-                    btn.classList.remove('bg-amber-500');
-                    btn.classList.add('bg-emerald-600');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('فشل حفظ التعديلات في الشيت.');
-            }
-
-            if (indicator) indicator.classList.add('hidden');
-        }
-
-        async function saveAllModifiedRowsSilently() {
-            const indicator = document.getElementById('saving-indicator');
-            if (indicator) indicator.classList.remove('hidden');
-
-            const list = Array.from(modifiedRows);
-
-            for (let rId of list) {
-                const s = document.getElementById(`status-${rId}`)?.value || "";
-                const n = document.getElementById(`notes-${rId}`)?.value || "";
-                const f = cleanDateToYYYYMMDD(document.getElementById(`followUp-${rId}`)?.value || "");
-
-                try {
-                    await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'updateFollowupRow',
-                            rowIndex: rId,
-                            status: s,
-                            notes: n,
-                            followUpDate: f
-                        })
-                    });
-
-                    modifiedRows.delete(rId);
-
-                    const row = originalRecords.find(r => String(r.rowIndex) === String(rId));
-                    if (row) {
-                        row.status = s;
-                        row.notes = n;
-                        row.followUpDate = f;
-                    }
-
-                    const btn = document.getElementById(`btn-save-${rId}`);
-                    if (btn) {
-                        btn.classList.remove('bg-amber-500');
-                        btn.classList.add('bg-emerald-600');
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-
-            if (indicator) indicator.classList.add('hidden');
-        }
-    </script>
+    async function saveAllModifiedRowsSilently() {
+      const indicator = document.getElementById('saving-indicator');
+      indicator.classList.remove('hidden');
+      const list = Array.from(modifiedRows);
+      for (let rId of list) {
+        const s = document.getElementById(`status-${rId}`)?.value || '';
+        const n = document.getElementById(`notes-${rId}`)?.value || '';
+        const f = cleanDateToYYYYMMDD(document.getElementById(`followUp-${rId}`)?.value || '');
+        try {
+          const response = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateFollowupRow', rowIndex: rId, status: s, notes: n, followUpDate: f }) });
+          const result = await response.json();
+          if (!result.success) throw new Error(result.message || 'Auto save failed');
+          modifiedRows.delete(String(rId));
+          const row = originalRecords.find(r => String(r.rowIndex) === String(rId));
+          if (row) { row.status = s; row.notes = n; row.followUpDate = f; }
+          const btn = document.getElementById(`btn-save-${rId}`);
+          if (btn) { btn.classList.remove('bg-amber-500'); btn.classList.add('bg-emerald-600'); }
+        } catch (e) { console.error(e); }
+      }
+      indicator.classList.add('hidden');
+    }
+  </script>
 </body>
 </html>
