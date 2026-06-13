@@ -24,7 +24,7 @@
         </div>
         <h2 class="text-2xl font-black text-slate-900">منظومة المتابعة الرقمية</h2>
         <p class="text-slate-500 text-sm mt-1 font-bold">يرجى كتابة كود الموظف الخاص بك بشكل صحيح (مثال: CC01)</p>
-        
+
         <div class="mt-6 space-y-4">
             <div class="text-right">
                 <label class="block text-sm font-black text-slate-700 mb-1">كود الموظف المسؤول</label>
@@ -45,7 +45,7 @@
                     <p class="text-xs text-slate-500 font-bold">الموظف الحالي: <span id="user-display-badge" class="text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"></span></p>
                 </div>
             </div>
-            
+
             <div class="flex flex-wrap items-center gap-3">
                 <div class="flex items-center gap-1.5 border border-slate-200 bg-slate-50 p-1.5 rounded-lg text-xs font-bold">
                     <span class="text-slate-500">من:</span>
@@ -58,7 +58,7 @@
                     <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
                     <input type="text" id="search-any" oninput="processTableData()" placeholder="بحث باسم العميل أو الهاتف..." class="border border-slate-300 text-slate-900 font-bold rounded-lg pr-7 pl-2 py-1.5 text-xs bg-slate-50 focus:outline-none focus:border-emerald-500 w-44">
                 </div>
-                
+
                 <select id="filter-status" onchange="processTableData()" class="border border-slate-300 text-slate-900 font-bold rounded-lg p-1.5 text-xs bg-white focus:outline-none">
                     <option value="ALL">كل الحالات</option>
                     <option value="لم يتم الرد">لم يتم الرد</option>
@@ -105,7 +105,7 @@
                         <tbody id="crm-table-body" class="divide-y divide-slate-200 font-bold text-slate-800"></tbody>
                     </table>
                 </div>
-                
+
                 <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex justify-between items-center font-bold flex-wrap gap-2">
                     <div>إجمالي العمليات المسندة لك: <span id="counter-total" class="text-blue-600 font-black">0</span> عملاء</div>
                     <div id="saving-indicator" class="text-emerald-700 hidden font-black"><i class="fa-solid fa-cloud-arrow-up animate-pulse ml-1 text-blue-500"></i> جاري مزامنة وحفظ التعديلات تلقائياً في الشيت المباشر...</div>
@@ -117,7 +117,7 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpCXaJZDPM_QdmKKj0lNXETIcYoQssnqS7B0tQcHooQ9iWDHVijqqnjl6XPZ6EJld4ig/exec";
-        
+
         let loggedEmpCode = "";
         let originalRecords = [];
         let modifiedRows = new Set();
@@ -125,27 +125,24 @@
 
         function login() {
             const inputVal = document.getElementById('login-emp-input').value.trim();
-            if (!inputVal) { 
+            if (!inputVal) {
                 alert("من فضلك أدخل كود الموظف الخاص بك (مثل CC01) للبدء!");
-                return; 
+                return;
             }
-            
+
             loggedEmpCode = inputVal.toUpperCase();
             document.getElementById('login-card').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('user-display-badge').innerText = loggedEmpCode;
-            
+
             loadDataFromSheet();
-            autoSaveTimer = setInterval(() => { 
-                if (modifiedRows.size > 0) saveAllModifiedRowsSilently(); 
-            }, 15000); 
+            autoSaveTimer = setInterval(() => {
+                if (modifiedRows.size > 0) saveAllModifiedRowsSilently();
+            }, 15000);
         }
 
         async function logoutWithSave() {
-            if (modifiedRows.size > 0) {
-                await saveAllModifiedRowsSilently();
-            }
-
+            if (modifiedRows.size > 0) await saveAllModifiedRowsSilently();
             if (autoSaveTimer) clearInterval(autoSaveTimer);
 
             modifiedRows.clear();
@@ -161,8 +158,7 @@
             document.getElementById('table-content-area').classList.add('hidden');
 
             try {
-                const fetchUrl = SCRIPT_URL + "?empCode=" + encodeURIComponent(loggedEmpCode);
-                const response = await fetch(fetchUrl);
+                const response = await fetch(SCRIPT_URL + "?empCode=" + encodeURIComponent(loggedEmpCode));
                 const data = await response.json();
 
                 originalRecords = Array.isArray(data) ? data.map(row => ({
@@ -194,11 +190,9 @@
                 let dateStr = String(dateInput).trim();
                 if (dateStr.includes('T')) return dateStr.split('T')[0];
                 const dObj = new Date(dateStr);
-                if (!isNaN(dObj.getTime())) {
-                    return dObj.toISOString().split('T')[0];
-                }
+                if (!isNaN(dObj.getTime())) return dObj.toISOString().split('T')[0];
                 return dateStr;
-            } catch (e) {
+            } catch {
                 return "";
             }
         }
@@ -229,9 +223,7 @@
                 );
             }
 
-            if (statusFilter !== "ALL") {
-                records = records.filter(r => String(r.status || "") === statusFilter);
-            }
+            if (statusFilter !== "ALL") records = records.filter(r => String(r.status || "") === statusFilter);
 
             let alertCounter = 0;
             records = records.filter(r => {
@@ -255,62 +247,46 @@
 
             document.getElementById('counter-total').innerText = records.length;
             document.getElementById('counter-alerts').innerText = alertCounter;
-            
             renderTableRows(records, todayStr);
         }
 
         function renderTableRows(records, todayStr) {
             const tbody = document.getElementById('crm-table-body');
-            let html = "";
-            
+
             if (records.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400 font-bold">لا توجد سجلات مطابقة لكودك الحالي في الشيت.</td></tr>`;
                 return;
             }
 
-            records.forEach((row, index) => {
+            tbody.innerHTML = records.map((row, index) => {
                 const fDateClean = cleanDateToYYYYMMDD(row.followUpDate);
-                const status = row.status || "";
-                const notes = row.notes || "";
-                const customerName = row.customerName || "-";
-                const phone = row.phone || "-";
-                const productType = row.productType || "-";
-                const price = row.price || "-";
-
-                let isAlert = (fDateClean && fDateClean < todayStr && !String(status).includes('تأكيد') && !String(status).includes('غير جاد'));
-                
+                const isAlert = (fDateClean && fDateClean < todayStr && !String(row.status).includes('تأكيد') && !String(row.status).includes('غير جاد'));
                 let dateDisplay = row.date || "";
-                if (row.date && !isNaN(new Date(row.date).getTime())) {
-                    dateDisplay = new Date(row.date).toLocaleDateString('ar-EG');
-                }
+                if (row.date && !isNaN(new Date(row.date).getTime())) dateDisplay = new Date(row.date).toLocaleDateString('ar-EG');
 
-                html += `
+                return `
                     <tr class="hover:bg-slate-50 text-center transition-colors ${isAlert ? 'alert-row' : ''}">
                         <td class="p-2.5 text-slate-400 bg-slate-50/50">${index + 1}</td>
                         <td class="p-2.5 text-slate-600">${dateDisplay}</td>
-                        <td class="p-2.5 text-slate-900 text-right font-black text-sm">${customerName}</td>
-                        <td class="p-2.5 text-slate-700 font-bold tracking-wide">${phone}</td>
-                        <td class="p-2.5"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[11px] font-black border border-emerald-200">${productType}</span></td>
-                        <td class="p-2.5 font-black text-emerald-600">${price} ج.م</td>
-                        
+                        <td class="p-2.5 text-slate-900 text-right font-black text-sm">${row.customerName || '-'}</td>
+                        <td class="p-2.5 text-slate-700 font-bold tracking-wide">${row.phone || '-'}</td>
+                        <td class="p-2.5"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[11px] font-black border border-emerald-200">${row.productType || '-'}</span></td>
+                        <td class="p-2.5 font-black text-emerald-600">${row.price || '-'} ج.م</td>
                         <td class="p-1.5 bg-slate-50/30">
                             <select id="status-${row.rowIndex}" onchange="markModified(${row.rowIndex})" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white">
-                                <option value="" ${status === '' ? 'selected' : ''}>-- إختر --</option>
-                                <option value="لم يتم الرد" ${status === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
-                                <option value="متابعة" ${status === 'متابعة' ? 'selected' : ''}>متابعة</option>
-                                <option value="تأكيد الطلب" ${status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option>
-                                <option value="غير جاد" ${status === 'غير جاد' ? 'selected' : ''}>غير جاد</option>
+                                <option value="" ${row.status === '' ? 'selected' : ''}>-- إختر --</option>
+                                <option value="لم يتم الرد" ${row.status === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
+                                <option value="متابعة" ${row.status === 'متابعة' ? 'selected' : ''}>متابعة</option>
+                                <option value="تأكيد الطلب" ${row.status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option>
+                                <option value="غير جاد" ${row.status === 'غير جاد' ? 'selected' : ''}>غير جاد</option>
                             </select>
                         </td>
-
                         <td class="p-1.5 bg-slate-50/30">
-                            <textarea id="notes-${row.rowIndex}" oninput="autoExpand(this); markModified(${row.rowIndex})" placeholder="اكتب ملاحظتك الحالية..." class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white text-right dynamic-textarea">${notes}</textarea>
+                            <textarea id="notes-${row.rowIndex}" oninput="autoExpand(this); markModified(${row.rowIndex})" placeholder="اكتب ملاحظتك الحالية..." class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white text-right dynamic-textarea">${row.notes || ''}</textarea>
                         </td>
-
                         <td class="p-1.5 bg-slate-50/30">
                             <input type="date" id="followUp-${row.rowIndex}" onchange="markModified(${row.rowIndex})" value="${fDateClean}" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold bg-white text-center">
                         </td>
-
                         <td class="p-1.5 bg-slate-50">
                             <button id="btn-save-${row.rowIndex}" onclick="saveSingleRow(${row.rowIndex})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded text-[11px] transition cursor-pointer">
                                 <i class="fa-solid fa-floppy-disk"></i> حفظ
@@ -318,9 +294,8 @@
                         </td>
                     </tr>
                 `;
-            });
+            }).join('');
 
-            tbody.innerHTML = html;
             document.querySelectorAll('.dynamic-textarea').forEach(autoExpand);
         }
 
@@ -341,21 +316,13 @@
         async function saveSingleRow(rowIndex) {
             const indicator = document.getElementById('saving-indicator');
             if (indicator) indicator.classList.remove('hidden');
-            
+
             const stat = document.getElementById(`status-${rowIndex}`).value;
             const nts = document.getElementById(`notes-${rowIndex}`).value;
             const fUp = cleanDateToYYYYMMDD(document.getElementById(`followUp-${rowIndex}`).value);
 
-            const details = {
-                rowIndex: rowIndex,
-                status: stat,
-                notes: nts,
-                followUpDate: fUp
-            };
-
-            const formBody = Object.keys(details)
-                .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key]))
-                .join('&');
+            const details = { rowIndex, status: stat, notes: nts, followUpDate: fUp };
+            const formBody = new URLSearchParams(details).toString();
 
             try {
                 await fetch(SCRIPT_URL, {
@@ -366,7 +333,6 @@
                 });
 
                 modifiedRows.delete(rowIndex);
-
                 const row = originalRecords.find(r => String(r.rowIndex) === String(rowIndex));
                 if (row) {
                     row.status = stat;
@@ -390,23 +356,11 @@
             const indicator = document.getElementById('saving-indicator');
             if (indicator) indicator.classList.remove('hidden');
 
-            const list = Array.from(modifiedRows);
-            
-            for (let rId of list) {
+            for (let rId of Array.from(modifiedRows)) {
                 const s = document.getElementById(`status-${rId}`)?.value || "";
                 const n = document.getElementById(`notes-${rId}`)?.value || "";
                 const f = cleanDateToYYYYMMDD(document.getElementById(`followUp-${rId}`)?.value || "");
-
-                const details = {
-                    rowIndex: rId,
-                    status: s,
-                    notes: n,
-                    followUpDate: f
-                };
-
-                const formBody = Object.keys(details)
-                    .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key]))
-                    .join('&');
+                const formBody = new URLSearchParams({ rowIndex: rId, status: s, notes: n, followUpDate: f }).toString();
 
                 try {
                     await fetch(SCRIPT_URL, {
@@ -417,7 +371,6 @@
                     });
 
                     modifiedRows.delete(rId);
-
                     const row = originalRecords.find(r => String(r.rowIndex) === String(rId));
                     if (row) {
                         row.status = s;
