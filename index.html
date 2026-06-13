@@ -297,68 +297,89 @@
             renderTableRows(records, todayStr);
         }
 
-        function renderTableRows(records, todayStr) {
-            const tbody = document.getElementById('crm-table-body');
-            document.getElementById('table-loader').classList.add('hidden');
-            document.getElementById('table-content-area').classList.remove('hidden');
-            
-            if (records.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500 font-extrabold text-base">لا توجد سجلات مطابقة للخيارات الزمنية الحالية.</td></tr>`;
-                return;
-            }
+function renderTableRows(records, todayStr) {
+    const tbody = document.getElementById('crm-table-body');
+    document.getElementById('table-loader').classList.add('hidden');
+    document.getElementById('table-content-area').classList.remove('hidden');
+    
+    if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500 font-extrabold text-base">لا توجد سجلات مطابقة للخيارات الزمنية الحالية.</td></tr>`;
+        return;
+    }
 
-            let html = "";
-            records.forEach((row, index) => {
-                let isRowAlert = false;
-                if (row.followUpDate) {
-                    const fDate = new Date(row.followUpDate).toISOString().split('T')[0];
-                    if (fDate < todayStr && !row.status.includes('تأكيد') && !row.status.includes('غير جاد')) {
-                        isRowAlert = true;
+    let html = "";
+    records.forEach((row, index) => {
+        let isRowAlert = false;
+        
+        // 1. تنظيف وتنسيق تاريخ المتابعة القادم من الشيت لحل مشكلة الاختفاء الافتراضي
+        let cleanFollowUpDate = "";
+        if (row.followUpDate) {
+            try {
+                // إذا كان التاريخ يحتوي على توقيت أو صيغة ISO كاملة نقوم بقص أول 10 حروف فقط (YYYY-MM-DD)
+                if (row.followUpDate.includes('T')) {
+                    cleanFollowUpDate = row.followUpDate.split('T')[0];
+                } else {
+                    // تحويله لكائن تاريخ القياسي ثم استخراج الصيغة المتوافقة مع المتصفح
+                    const fDateObj = new Date(row.followUpDate);
+                    if (!isNaN(fDateObj.getTime())) {
+                        cleanFollowUpDate = fDateObj.toISOString().split('T')[0];
+                    } else {
+                        cleanFollowUpDate = row.followUpDate.trim();
                     }
                 }
-
-                const d = new Date(row.date);
-                const dateClean = d && !isNaN(d.getTime()) ? d.toLocaleDateString('ar-EG') : row.date;
-
-                html += `
-                    <tr class="hover:bg-slate-100/80 text-center transition-colors ${isRowAlert ? 'alert-row' : ''}">
-                        <td class="p-3 text-slate-500 font-bold bg-slate-50">${index + 1}</td>
-                        <td class="p-3 text-slate-700">${dateClean}</td>
-                        <td class="p-3 text-slate-900 text-right font-extrabold text-sm">${row.customerName}</td>
-                        <td class="p-3 text-slate-800 font-extrabold text-sm tracking-wide">${row.phone}</td>
-                        <td class="p-3"><span class="bg-emerald-50 text-emerald-800 border-2 border-emerald-200 px-2.5 py-0.5 rounded text-xs font-black">${row.productType}</span></td>
-                        <td class="p-3 font-black text-emerald-700 text-sm">${row.price.toLocaleString()} ج.م</td>
-                        
-                        <td class="p-2 bg-blue-50/10">
-                            <select id="status-${row.rowIndex}" onchange="markRowAsModified(${row.rowIndex})" class="w-full border-2 border-slate-300 rounded-lg p-2 font-bold text-xs bg-white text-slate-900 focus:border-emerald-600">
-                                <option value="" ${row.status === '' ? 'selected' : ''}>-- إختر الحالة --</option>
-                                <option value="لم يتم الرد" ${row.status === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
-                                <option value="متابعة" ${row.status === 'متابعة' ? 'selected' : ''}>متابعة</option>
-                                <option value="تأكيد الطلب" ${row.status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option>
-                                <option value="غير جاد" ${row.status === 'غير جاد' ? 'selected' : ''}>غير جاد</option>
-                            </select>
-                        </td>
-                        <td class="p-2 bg-blue-50/10">
-                            <textarea id="notes-${row.rowIndex}" oninput="autoExpandTextarea(this); markRowAsModified(${row.rowIndex})" placeholder="أدخل الملاحظة..." class="w-full border-2 border-slate-300 rounded-lg p-2 font-bold text-xs bg-white text-slate-900 focus:border-emerald-600 focus:bg-white text-right dynamic-textarea font-medium">${row.notes}</textarea>
-                        </td>
-                        <td class="p-2 bg-blue-50/10">
-                            <input type="date" id="followUp-${row.rowIndex}" onchange="markRowAsModified(${row.rowIndex})" value="${row.followUpDate}" class="w-full border-2 border-slate-300 rounded-lg p-2 font-bold text-xs bg-white text-slate-900 text-center focus:border-emerald-600">
-                        </td>
-                        <td class="p-2 bg-slate-50">
-                            <button id="btn-save-${row.rowIndex}" onclick="saveRowData(${row.rowIndex})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-1 rounded-md transition shadow cursor-pointer">
-                                <i class="fa-solid fa-floppy-disk ml-1"></i> حفظ
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
-            
-            document.querySelectorAll('.dynamic-textarea').forEach(textarea => {
-                autoExpandTextarea(textarea);
-            });
+            } catch(e) {
+                cleanFollowUpDate = ""; // حماية في حال كانت الخلية فارغة تماماً
+            }
         }
 
+        // 2. فحص ما إذا كانت المتابعة متأخرة وتستحق التنبيه باللون الأحمر
+        if (cleanFollowUpDate) {
+            if (cleanFollowUpDate < todayStr && !row.status.includes('تأكيد') && !row.status.includes('غير جاد')) {
+                isRowAlert = true;
+            }
+        }
+
+        const d = new Date(row.date);
+        const dateClean = d && !isNaN(d.getTime()) ? d.toLocaleDateString('ar-EG') : row.date;
+
+        html += `
+            <tr class="hover:bg-slate-100/80 text-center transition-colors ${isRowAlert ? 'alert-row' : ''}">
+                <td class="p-3 text-slate-500 font-bold bg-slate-50">${index + 1}</td>
+                <td class="p-3 text-slate-700">${dateClean}</td>
+                <td class="p-3 text-slate-900 text-right font-extrabold text-sm">${row.customerName}</td>
+                <td class="p-3 text-slate-800 font-extrabold text-sm tracking-wide">${row.phone}</td>
+                <td class="p-3"><span class="bg-emerald-50 text-emerald-800 border-2 border-emerald-200 px-2.5 py-0.5 rounded text-xs font-black">${row.productType}</span></td>
+                <td class="p-3 font-black text-emerald-700 text-sm">${row.price.toLocaleString()} ج.م</td>
+                
+                <td class="p-2 bg-blue-50/10">
+                    <select id="status-${row.rowIndex}" onchange="markRowAsModified(${row.rowIndex})" class="w-full border-2 border-slate-300 rounded-lg p-2 font-bold text-xs bg-white text-slate-900 focus:border-emerald-600">
+                        <option value="" ${row.status === '' ? 'selected' : ''}>-- إختر الحالة --</option>
+                        <option value="لم يتم الرد" ${row.status === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
+                        <option value="متابعة" ${row.status === 'متابعة' ? 'selected' : ''}>متابعة</option>
+                        <option value="تأكيد الطلب" ${row.status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option>
+                        <option value="غير جاد" ${row.status === 'غير جاد' ? 'selected' : ''}>غير جاد</option>
+                    </select>
+                </td>
+                <td class="p-2 bg-blue-50/10">
+                    <textarea id="notes-${row.rowIndex}" oninput="autoExpandTextarea(this); markRowAsModified(${row.rowIndex})" placeholder="أدخل الملاحظة..." class="w-full border-2 border-slate-300 rounded-lg p-2 font-bold text-xs bg-white text-slate-900 focus:border-emerald-600 focus:bg-white text-right dynamic-textarea font-medium">${row.notes}</textarea>
+                </td>
+                <td class="p-2 bg-blue-50/10">
+                    <input type="date" id="followUp-${row.rowIndex}" onchange="markRowAsModified(${row.rowIndex})" value="${cleanFollowUpDate}" class="w-full border-2 border-slate-300 rounded-lg p-2 font-bold text-xs bg-white text-slate-900 text-center focus:border-emerald-600">
+                </td>
+                <td class="p-2 bg-slate-50">
+                    <button id="btn-save-${row.rowIndex}" onclick="saveRowData(${row.rowIndex})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-1 rounded-md transition shadow cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk ml-1"></i> حفظ
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+    
+    document.querySelectorAll('.dynamic-textarea').forEach(textarea => {
+        autoExpandTextarea(textarea);
+    });
+}
         // دالة ذكية لإضافة السطر إلى قائمة الانتظار بمجرد قيام الموظف بأي كتابة أو اختيار
         function markRowAsModified(rowIndex) {
             modifiedRows.add(rowIndex);
