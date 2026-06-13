@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة متابعة العملاء الذكية للموظفين</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+        .alert-row { background-color: #fef2f2 !important; border-right: 4px solid #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+    <!-- 1. شاشة تسجيل الدخول الترحيبية -->
+    <div id="login-card" class="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl border border-slate-100 transition-all">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800">بوابة تسجيل الموظفين</h2>
+            <p class="text-slate-500 text-sm mt-1">الرجاء إدخال الكود المخصص لك لمتابعة عملائك</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">كود الموظف التعريفي (الـ Code)</label>
+                <input type="text" id="login-emp-code" placeholder="مثال: CC 1" class="w-full border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-50 text-center font-bold text-lg tracking-wide">
+            </div>
+            <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-xl transition cursor-pointer">
+                دخول واستعراض الجدول <i class="fa-solid fa-arrow-left mr-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. لوحة تحكم الجدول والنظام (تظهر بعد تسجيل الدخول بنجاح) -->
+    <div id="app-container" class="w-full min-h-screen flex flex-col hidden transition-all">
+        <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-20 flex flex-wrap justify-between items-center gap-4 shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center text-lg"><i class="fa-solid fa-table-list"></i></div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg">منظومة المتابعة اللحظية</h1>
+                    <p class="text-xs text-slate-500 font-medium">مرحباً بك: <span id="user-display-badge" class="text-blue-600 font-bold"></span></p>
+                </div>
+            </div>
+            
+            <!-- أدوات الفلترة والبحث السريع السيرفرية والمحلية -->
+            <div class="flex flex-wrap items-center gap-2">
+                <input type="text" id="table-search" oninput="processTableData()" placeholder="بحث سريع باسم العميل أو المنتج..." class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-slate-50 focus:outline-none focus:border-blue-500">
+                
+                <select id="filter-status" onchange="processTableData()" class="border border-slate-200 rounded-lg p-1.5 text-sm bg-white focus:outline-none">
+                    <option value="ALL">كل الحالات البيعية</option>
+                    <option value="متابعة">متابعة</option>
+                    <option value="لم يتم الرد">لم يتم الرد</option>
+                    <option value="تأكيد الطلب">تأكيد الطلب</option>
+                </select>
+
+                <select id="filter-alert" onchange="processTableData()" class="border border-slate-200 rounded-lg p-1.5 text-sm bg-white text-red-600 font-medium focus:outline-none">
+                    <option value="ALL">كل التواريخ</option>
+                    <option value="EXPIRED">تجاوز تاريخ المتابعة ⚠️</option>
+                    <option value="TODAY">متابعات اليوم 📅</option>
+                </select>
+
+                <button onclick="logout()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm transition">
+                    خروج <i class="fa-solid fa-right-from-bracket mr-1"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- محتوى الـ Loader والبيانات -->
+        <main class="p-6 flex-1 flex flex-col">
+            <div id="table-loader" class="flex-1 flex flex-col items-center justify-center p-12">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-2"></div>
+                <p class="text-sm text-slate-500">جاري سحب بياناتك المباشرة والآمنة من الجوجل شيت...</p>
+            </div>
+
+            <!-- حاوية الجدول الرئيسي المتجاوب -->
+            <div id="table-content-area" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden flex-1 flex flex-col">
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-right text-sm border-collapse min-w-[1000px]">
+                        <thead>
+                            <tr class="bg-slate-800 text-slate-200 sticky top-0 z-10 select-none">
+                                <th class="p-4 font-semibold text-center w-12">#</th>
+                                <th class="p-4 font-semibold cursor-pointer" onclick="toggleSort('date')">التاريخ <i class="fa-solid fa-sort text-xs opacity-50"></i></th>
+                                <th class="p-4 font-semibold">اسم العميل</th>
+                                <th class="p-4 font-semibold">رقم الهاتف</th>
+                                <th class="p-4 font-semibold">نوع المنتج</th>
+                                <th class="p-4 font-semibold cursor-pointer" onclick="toggleSort('price')">السعر <i class="fa-solid fa-sort text-xs opacity-50"></i></th>
+                                <th class="p-4 font-semibold w-48 bg-slate-900">الحالة (تعديل مباشر)</th>
+                                <th class="p-4 font-semibold w-64 bg-slate-900">الملاحظات (تعديل مباشر)</th>
+                                <th class="p-4 font-semibold w-48 bg-slate-900">تاريخ المتابعة (تعديل مباشر)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crm-table-body" class="divide-y divide-slate-100">
+                            <!-- يتم البناء الديناميكي هنا عبر JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- الفوتر ومعلومات العداد -->
+                <div class="p-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center font-medium">
+                    <div>إجمالي الصفوف الظاهرة: <span id="counter-total" class="font-bold text-slate-700">0</span></div>
+                    <div>الحالات التي تحتاج إجراء فوري: <span id="counter-alerts" class="font-bold text-red-600">0</span></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ضع رابط الـ Web App الخاص بك من Apps Script هنا بدقة
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpCXaJZDPM_QdmKKj0lNXETIcYoQssnqS7B0tQcHooQ9iWDHVijqqnjl6XPZ6EJld4ig/exec";
+        
+        let loggedEmpCode = "";
+        let originalRecords = [];
+        let currentSortField = 'date';
+        let isSortAsc = false;
+
+        function login() {
+            const codeInput = document.getElementById('login-emp-code').value.trim();
+            if (!codeInput) {
+                alert("برجاء كتابة كود الموظف الخاص بك أولاً!");
+                return;
+            }
+            loggedEmpCode = codeInput;
+            
+            // إخفاء كارت الدخول وإظهار شاشة النظام
+            document.getElementById('login-card').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('user-display-badge').innerText = loggedEmpCode;
+            
+            loadDataFromSheet();
+        }
+
+        function logout() {
+            loggedEmpCode = "";
+            originalRecords = [];
+            document.getElementById('login-emp-code').value = "";
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-card').classList.remove('hidden');
+        }
+
+        async function loadDataFromSheet() {
+            document.getElementById('table-loader').classList.remove('hidden');
+            document.getElementById('table-content-area').classList.add('hidden');
+            
+            try {
+                // استدعاء البيانات الآمنة المفلترة للموظف الحالي من الـ API مباشرةً
+                const response = await fetch(`${SCRIPT_URL}?empCode=${encodeURIComponent(loggedEmpCode)}`);
+                originalRecords = await response.json();
+                processTableData();
+            } catch (error) {
+                console.error(error);
+                alert("حدث خطأ أثناء تحميل جدول البيانات المباشرة.");
+            }
+        }
+
+        function processTableData() {
+            let records = [...originalRecords];
+            const searchVal = document.getElementById('table-search').value.toLowerCase();
+            const statusFilter = document.getElementById('filter-status').value;
+            const alertFilter = document.getElementById('filter-alert').value;
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            // 1. معالجة الفلترة بالبحث
+            if (searchVal) {
+                records = records.filter(r => 
+                    r.customerName.toLowerCase().includes(searchVal) || 
+                    r.productType.toLowerCase().includes(searchVal) ||
+                    r.phone.includes(searchVal)
+                );
+            }
+
+            // 2. معالجة فلترة الحالة البيعية
+            if (statusFilter !== "ALL") {
+                records = records.filter(r => r.status === statusFilter);
+            }
+
+            // 3. معالجة فلترة التنبيهات المتقدمة (التواريخ الفائتة أو اليوم)
+            let alertCounter = 0;
+            records = records.filter(r => {
+                let isExpired = false;
+                let isToday = false;
+                
+                if (r.followUpDate) {
+                    const fDate = new Date(r.followUpDate).toISOString().split('T')[0];
+                    if (fDate < todayStr && !r.status.includes('تأكيد') && !r.status.includes('مكتمل')) {
+                        isExpired = true;
+                        alertCounter++;
+                    } else if (fDate === todayStr) {
+                        isToday = true;
+                    }
+                }
+                
+                if (alertFilter === "EXPIRED") return isExpired;
+                if (alertFilter === "TODAY") return isToday;
+                return true;
+            });
+
+            // 4. معالجة الترتيب (Sort)
+            records.sort((a, b) => {
+                let valA = a[currentSortField];
+                let valB = b[currentSortField];
+                if (currentSortField === 'price') {
+                    return isSortAsc ? valA - valB : valB - valA;
+                } else {
+                    return isSortAsc ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+                }
+            });
+
+            // تحديث عدادات الفوتر بالقيم الجديدة المفلترة
+            document.getElementById('counter-total').innerText = records.length;
+            document.getElementById('counter-alerts').innerText = alertCounter;
+
+            renderTableRows(records, todayStr);
+        }
+
+        function renderTableRows(records, todayStr) {
+            const tbody = document.getElementById('crm-table-body');
+            document.getElementById('table-loader').classList.add('hidden');
+            document.getElementById('table-content-area').classList.remove('hidden');
+            
+            if (records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-semibold">لا توجد سجلات مطابقة للخيارات الحالية.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            records.forEach((row, index) => {
+                // الكشف عن تخطي التواريخ لتمييز السطر بالكامل بلون أحمر تحذيري خفيف
+                let isRowAlert = false;
+                if (row.followUpDate) {
+                    const fDate = new Date(row.followUpDate).toISOString().split('T')[0];
+                    if (fDate < todayStr && !row.status.includes('تأكيد') && !row.status.includes('مكتمل')) {
+                        isRowAlert = true;
+                    }
+                }
+
+                const d = new Date(row.date);
+                const dateClean = d && !isNaN(d.getTime()) ? d.toLocaleDateString('ar-EG') : row.date;
+
+                html += `
+                    <tr class="transition-colors hover:bg-slate-50/80 ${isRowAlert ? 'alert-row' : ''}">
+                        <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
+                        <td class="p-3 text-slate-600">${dateClean}</td>
+                        <td class="p-3 font-semibold text-slate-800">${row.customerName}</td>
+                        <td class="p-3 font-medium text-slate-700">${row.phone}</td>
+                        <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs">${row.productType}</span></td>
+                        <td class="p-3 font-bold text-emerald-600">${row.price.toLocaleString()} ج.م</td>
+                        
+                        <!-- الـ 3 أعمدة القابلة للتعديل اللحظي والترحيل الفوري للجوجل شيت -->
+                        <td class="p-2 bg-slate-50/50">
+                            <select onchange="updateCellOnFly(${row.rowIndex}, 'status', this.value)" class="w-full border border-slate-200 rounded-lg p-1.5 text-xs font-semibold bg-white shadow-xs focus:ring-1 focus:ring-blue-500">
+                                <option value="" ${row.status === '' ? 'selected' : ''}>إختر الحالة...</option>
+                                <option value="متابعة" ${row.status === 'متابعة' ? 'selected' : ''}>متابعة</option>
+                                <option value="لم يتم الرد" ${row.status === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
+                                <option value="تأكيد الطلب" ${row.status === 'تأكيد الطلب' ? 'selected' : ''}>تأكيد الطلب</option>
+                            </select>
+                        </td>
+                        <td class="p-2 bg-slate-50/50">
+                            <input type="text" value="${row.notes}" onchange="updateCellOnFly(${row.rowIndex}, 'notes', this.value)" placeholder="أكتب ملاحظة لتحديث الشيت..." class="w-full border border-slate-200 rounded-lg p-1.5 text-xs bg-white focus:outline-none focus:border-blue-500">
+                        </td>
+                        <td class="p-2 bg-slate-50/50">
+                            <input type="date" value="${row.followUpDate}" onchange="updateCellOnFly(${row.rowIndex}, 'followUpDate', this.value)" class="w-full border border-slate-200 rounded-lg p-1.5 text-xs bg-white text-center focus:outline-none">
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // تفعيل فرز الأعمدة التبادلي عند الضغط على العناوين
+        function toggleSort(field) {
+            if (currentSortField === field) {
+                isSortAsc = !isSortAsc;
+            } else {
+                currentSortField = field;
+                isSortAsc = true;
+            }
+            processTableData();
+        }
+
+        // دالة السحر البرمجي (الترحيل اللحظي التلقائي بدون أزرار حفظ)
+        async function updateCellOnFly(rowIndex, fieldName, value) {
+            // تحديث السجل محلياً في الذاكرة فوراً لسرعة العرض والفلترة اللحظية
+            const localRecord = originalRecords.find(r => r.rowIndex === rowIndex);
+            if (localRecord) {
+                localRecord[fieldName] = value;
+            }
+
+            // إرسال طلب التحديث التلقائي الفوري للخلفية بجوجل شيت بدون مقاطعة كتابة الموظف
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rowIndex: rowIndex,
+                        status: localRecord.status,
+                        notes: localRecord.notes,
+                        followUpDate: localRecord.followUpDate
+                    })
+                });
+                // تحديث التنبيهات والألوان محلياً بهدوء وسلاسة
+                const todayStr = new Date().toISOString().split('T')[0];
+                processTableData();
+            } catch (error) {
+                console.error("خطأ أثناء ترحيل الخلية اللحظي:", error);
+            }
+        }
+    </script>
+</body>
+</html>
